@@ -25,7 +25,7 @@ except Exception:
     st.stop()
 
 # ==========================================
-# 💰 AREA MONETIZZAZIONE (Identica alla Home)
+# 💰 AREA MONETIZZAZIONE
 # ==========================================
 FLIGHT_LINK = "https://kiwi.tpx.lt/k6iWGXOK"
 LUGGAGE_LINK = "https://radicalstorage.tpx.lt/fpjMovNW"
@@ -41,10 +41,7 @@ RESTAURANT_LINK = "https://www.tripadvisor.com"
 HOTEL_LINK = "https://www.booking.com"
 TOUR_LINK = "https://www.getyourguide.com"
 
-# --- LINK PROMOZIONE ---
-PROMO_LINK = "https://www.30secondstoguide.it" 
-
-# --- Funzione Helper per Bottoni con Logo ---
+# --- HELPER IMMAGINI ---
 def get_base64_of_bin_file(bin_file):
     if os.path.exists(bin_file):
         with open(bin_file, 'rb') as f:
@@ -75,31 +72,28 @@ def partner_button(label, link, image_file):
 # ==========================================
 def create_complex_pdf(text, destination, meta_data):
     
-    # --- FUNZIONE SPAZZINO 4.0 (EURO FIX BLINDATO) ---
+    # --- FUNZIONE SPAZZINO 4.1 (Clean & Safe) ---
     def clean_text_for_pdf(text_input):
         if not text_input: return ""
         
-        # 1. Sostituzione preventiva SIMBOLI CRITICI
-        # Il simbolo Euro (€) DEVE diventare EUR prima di ogni altra cosa per evitare crash
+        # 1. Simboli critici
         replacements = {
-            "€": "EUR", "â¬": "EUR", # Euro e varianti encoding
+            "€": "EUR", "â¬": "EUR", 
             "$": "USD", "£": "GBP",
             "’": "'", "“": '"', "”": '"', "–": "-", "—": "-", "…": "..."
         }
         for char, replacement in replacements.items():
             text_input = text_input.replace(char, replacement)
             
-        # 2. Normalizzazione NFC (Compatta gli accenti italiani: à resta à)
+        # 2. Normalizzazione
         text_input = unicodedata.normalize('NFC', text_input)
         
         output = []
         for char in text_input:
             try:
-                # 3. Test Latin-1: Se passa (es. à, è, o testo normale), lo teniamo.
                 char.encode('latin-1')
                 output.append(char)
             except UnicodeEncodeError:
-                # 4. Fallback: Se non passa (es. Č), normalizziamo a base ASCII (C)
                 decomposed = unicodedata.normalize('NFD', char)
                 stripped = "".join(c for c in decomposed if unicodedata.category(c) != 'Mn')
                 output.append(stripped)
@@ -128,7 +122,6 @@ def create_complex_pdf(text, destination, meta_data):
 
         def make_cover(self, dest, meta):
             self.add_page()
-            # Sfondo Elegante
             self.set_fill_color(245, 245, 245) 
             self.rect(0, 0, 210, 297, 'F') 
             
@@ -145,14 +138,12 @@ def create_complex_pdf(text, destination, meta_data):
             self.set_text_color(100, 100, 100)
             self.cell(0, 10, "Manuale Operativo di Viaggio", 0, 1, 'C')
             
-            # Box Dati Viaggio
             self.ln(20)
             self.set_fill_color(255, 255, 255)
             self.rect(55, 140, 100, 50, 'F')
             
             self.set_y(145)
             self.set_font('Helvetica', 'B', 10)
-            # Pulizia preventiva anche qui sui metadati (soprattutto budget con simbolo Euro)
             clean_budget = clean_text_for_pdf(meta['budget'])
             self.cell(0, 6, f"Date: {meta['dates']}", 0, 1, 'C')
             self.cell(0, 6, f"Viaggiatori: {meta['pax']}", 0, 1, 'C')
@@ -169,7 +160,7 @@ def create_complex_pdf(text, destination, meta_data):
     
     # --- BOX CONTESTUALE ---
     def make_box(pdf_obj, text, link, color="blue"):
-        text = clean_text_for_pdf(text) # Pulizia obbligatoria anche qui
+        text = clean_text_for_pdf(text)
         colors = {
             "blue": (235, 245, 255), "green": (240, 255, 240),
             "yellow": (255, 252, 235), "orange": (255, 245, 235),
@@ -288,13 +279,13 @@ def create_complex_pdf(text, destination, meta_data):
     make_sponsor_box("Taxi Locale", "Kiwitaxi per spostamenti urbani", TAXI_LINK, highlight=True)
     make_sponsor_box("Ristoranti", "Recensioni su TripAdvisor", RESTAURANT_LINK, highlight=True)
 
-    return bytes(pdf.output(dest='S'))
+    # --- FIX CRASH BYTES: Aggiunto .encode('latin-1') ---
+    return pdf.output(dest='S').encode('latin-1')
 
 # ==========================================
-# 🖥️ INTERFACCIA WIZARD (UI Home Page Clone)
+# 🖥️ INTERFACCIA UTENTE
 # ==========================================
 
-# --- SIDEBAR IDENTICA ALLA PRINCIPALE ---
 with st.sidebar:
     if os.path.exists("logo.png"):
         st.image("logo.png", width=200)
@@ -320,7 +311,6 @@ with st.sidebar:
     partner_button("Polizza (Heymondo)", INSURANCE_LINK, "btn_heymondo.png")
     partner_button("Rimborsi (Airhelp)", REIMB_LINK, "btn_airhelp.png")
     
-    # --- AREA ADMIN SEGRETA ---
     with st.sidebar.expander("🔐 Admin Stats"):
         secret_pwd = st.text_input("Password", type="password")
         if secret_pwd == "fabio123": 
@@ -336,7 +326,6 @@ with st.sidebar:
     st.markdown("---")
     st.caption("© 2025 30SecondsToGuide")
 
-# --- CORPO CENTRALE (Header Identico) ---
 if os.path.exists("logo.png"):
     col_sp1, col_img, col_sp2 = st.columns([3, 2, 3])
     with col_img:
@@ -353,7 +342,6 @@ st.markdown("""
 
 st.write("") 
 
-# --- INPUT FORM WIZARD (Al posto del campo città semplice) ---
 with st.container():
     st.info("🧙‍♂️ Inserisci i dettagli per ricevere un Manuale Operativo completo.")
     
@@ -368,7 +356,6 @@ with st.container():
         end_date = st.date_input("Data Ritorno", datetime.date.today() + datetime.timedelta(days=37))
         kids = st.number_input("Numero Minorenni", min_value=0, value=0)
 
-    # Età bambini dinamica
     kids_ages = []
     if kids > 0:
         st.caption("Età dei ragazzi:")
@@ -380,14 +367,12 @@ with st.container():
 
     st.write("")
     
-    # --- LOGICA BOTTONE RESET ---
     def reset_app():
         if 'wizard_pdf' in st.session_state:
             del st.session_state['wizard_pdf']
     
     is_generated = 'wizard_pdf' in st.session_state
     
-    # Bottone Genera
     if st.button("✨ Crea il mio Manuale", type="primary", use_container_width=True, disabled=is_generated):
         if not destination:
             st.warning("Inserisci una destinazione!")
@@ -395,6 +380,10 @@ with st.container():
             duration = (end_date - start_date).days
             pax_desc = f"{adults} Adulti"
             if kids > 0: pax_desc += f", {kids} Ragazzi ({', '.join(kids_ages)} anni)"
+            
+            # Timestamp nel log
+            timestamp = datetime.datetime.now().strftime("%d/%m %H:%M")
+            get_shared_logs().append(f"🧙‍♂️ {destination} ({timestamp})")
             
             with st.spinner(f"🧙‍♂️ Sto elaborando l'itinerario per {destination}..."):
                 try:
@@ -429,7 +418,7 @@ with st.container():
                     meta = {
                         "dates": f"{start_date.strftime('%d/%m')} - {end_date.strftime('%d/%m/%Y')}",
                         "pax": f"{adults} Ad + {kids} Bimbi",
-                        "budget": f"€ {budget}"
+                        "budget": f"EUR {budget}"
                     }
                     
                     pdf_bytes = create_complex_pdf(text_content, destination, meta)
@@ -439,7 +428,6 @@ with st.container():
                 except Exception as e:
                     st.error(f"Errore del Mago: {e}")
 
-    # Bottone Scarica
     if 'wizard_pdf' in st.session_state:
         st.success("✅ Itinerario pronto!")
         st.download_button(
@@ -457,7 +445,6 @@ with st.container():
 st.markdown("---")
 st.subheader("✈️ I migliori strumenti per il tuo viaggio")
 
-# RIGA 1
 c1, c2, c3 = st.columns(3)
 with c1:
     st.caption("✈️ **Voli**")
@@ -471,7 +458,6 @@ with c3:
 
 st.write("") 
 
-# RIGA 2
 c4, c5, c6 = st.columns(3)
 with c4:
     st.caption("🎟️ **Tour**")
@@ -485,7 +471,6 @@ with c6:
 
 st.write("") 
 
-# RIGA 3
 c7, c8, c9 = st.columns(3)
 with c7:
     st.caption("📲 **Dati**")
@@ -499,7 +484,6 @@ with c9:
 
 st.write("") 
 
-# RIGA 4
 c10, c11, c12 = st.columns(3)
 with c10:
     st.caption("🚆 **Treni**")
@@ -511,7 +495,6 @@ with c12:
     st.caption("🚖 **Taxi**")
     partner_button("Kiwitaxi", TAXI_LINK, "btn_taxi.png")
 
-# --- SEZIONE SEO ---
 st.markdown("---")
 st.markdown("""
 <div style="text-align: justify; color: #555;">
