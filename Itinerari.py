@@ -72,31 +72,43 @@ def partner_button(label, link, image_file):
 # ==========================================
 def create_complex_pdf(text, destination, meta_data):
     
-    # --- FUNZIONE SPAZZINO 4.1 (Clean & Safe) ---
+    # --- FUNZIONE SPAZZINO 5.0 (No Holes Strategy) ---
     def clean_text_for_pdf(text_input):
         if not text_input: return ""
         
-        # 1. Simboli critici
+        # 1. Simboli critici (Valute e punteggiatura smart)
         replacements = {
-            "€": "EUR", "â¬": "EUR", 
+            "€": "EUR", "â‚¬": "EUR", 
             "$": "USD", "£": "GBP",
-            "’": "'", "“": '"', "”": '"', "–": "-", "—": "-", "…": "..."
+            "’": "'", "‘": "'", "“": '"', "”": '"', "–": "-", "—": "-", "…": "..."
         }
         for char, replacement in replacements.items():
             text_input = text_input.replace(char, replacement)
             
-        # 2. Normalizzazione
+        # 2. Normalizzazione NFC (Compatta accenti)
         text_input = unicodedata.normalize('NFC', text_input)
         
         output = []
         for char in text_input:
             try:
+                # 3. Test Latin-1 (Se passa, è ok)
                 char.encode('latin-1')
                 output.append(char)
             except UnicodeEncodeError:
+                # 4. Fallback Intelligente:
+                # Proviamo a decomporre (es. lettere dell'est europa con accenti strani)
                 decomposed = unicodedata.normalize('NFD', char)
                 stripped = "".join(c for c in decomposed if unicodedata.category(c) != 'Mn')
-                output.append(stripped)
+                
+                # Se dopo lo stripping il carattere è stampabile in latin-1, lo teniamo
+                try:
+                    stripped.encode('latin-1')
+                    output.append(stripped)
+                except:
+                    # Se è ancora alieno (es. Kanji, Emoji, Arabo), LO SALTIAMO
+                    # Ma grazie al prompt, questo non dovrebbe succedere quasi mai.
+                    pass
+                    
         return "".join(output)
 
     dest_clean = clean_text_for_pdf(destination)
@@ -397,6 +409,12 @@ with st.container():
                     - Gruppo: {pax_desc}
                     - Budget: € {budget}
                     
+                    REGOLE TASSATIVE SULLA LINGUA (ANTI-CRASH):
+                    1. Usa SOLO l'alfabeto Latino/Italiano esteso.
+                    2. NON USARE MAI Ideogrammi (Kanji), caratteri Cirillici, Arabi o Emojis.
+                    3. SE devi nominare un luogo locale (es. un tempio in Giappone), usa SOLO la TRASLITTERAZIONE (es. scrivi "Kinkaku-ji" e NON i kanji).
+                    4. Simboli Valute: scrivi "EUR", "USD", "JPY" invece di simboli grafici.
+                    
                     STRUTTURA TITOLI (Usa ESATTAMENTE questi):
                     # {destination.upper()}: [Sottotitolo]
                     **IL VERDETTO SUL BUDGET: € {budget}** (Stato: Lusso/Più che adeguato/Sufficiente/Stretto/Impossibile)
@@ -420,7 +438,7 @@ with st.container():
                     ## CAPITOLO 9: CONCLUSIONE
                     [Riflessione finale filosofica sul viaggio in questa città, descrivi l'essenza del viaggio]
 
-                    REGOLE:
+                    REGOLE EXTRA:
                     1. Usa EURO per i costi, usa il separatore delle migliaia.
                     2. Sii onesto sul budget.
                     3. Niente tabelle markdown.
@@ -523,4 +541,3 @@ st.markdown("""
     </p>
 </div>
 """, unsafe_allow_html=True)
-
