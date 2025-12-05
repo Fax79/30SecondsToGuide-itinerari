@@ -419,7 +419,7 @@ with st.container():
                     # {destination.upper()}: [Sottotitolo]
                     **IL VERDETTO SUL BUDGET: € {budget}** (Stato: Lusso/Più che adeguato/Sufficiente/Stretto/Impossibile)
                     ## CAPITOLO 1: LA PREPARAZIONE (Voli, eSim, Assicurazione)
-                    [Se la destinazione è all'estero dare informazioni sui voli dall'Italia, aeroporti principali: Milano, Bologna, Roma, Napoli. Verifica i prezzi aggiornati per il periodo prescelto e suggerisci Kiwi per strategia travel hack. Per destinazioni in Italia o raggiungibili più comodamente via terra suggerisci treni analizzando Omio per tariffe e tragitti]
+                    [Se la destinazione è all'estero dare informazioni sui voli dall'Italia, aeroporti principali: Milano, Bologna, Roma, Napoli. Verifica i prezzi aggiornati per il periodo prescelto e suggerisci Kiwi per strategia travel hack. Per destinazioni in Italia o raggiungibili più comodamente via terra suggerisci treni analizzando Omio per tariffe e tragitti. Fornisci prezzi E-sim Saily e assicuraizoni viaggi Heymondo che con il nostro link garantisce il 10% di sconto]
                     ## CAPITOLO 2: DOVE DORMIRE (Strategie alloggio)
                     [Suggerisci alloggi compatibili con la composizione dei viaggiatori, sia le zone della città, sia le strutture. Prediligi sistemazioni suggestive dove si possa entrare in connessione con il luogo, sempre in sicurezza e comodità soprattutto per famiglie con i bambini]
                     ## CAPITOLO 3: L'ITINERARIO GIORNO PER GIORNO (Dettagliato)
@@ -541,3 +541,4 @@ st.markdown("""
     </p>
 </div>
 """, unsafe_allow_html=True)
+
