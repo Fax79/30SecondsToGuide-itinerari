@@ -96,19 +96,13 @@ def create_complex_pdf(text, destination, meta_data):
                 output.append(char)
             except UnicodeEncodeError:
                 # 4. Fallback Intelligente:
-                # Proviamo a decomporre (es. lettere dell'est europa con accenti strani)
                 decomposed = unicodedata.normalize('NFD', char)
                 stripped = "".join(c for c in decomposed if unicodedata.category(c) != 'Mn')
-                
-                # Se dopo lo stripping il carattere è stampabile in latin-1, lo teniamo
                 try:
                     stripped.encode('latin-1')
                     output.append(stripped)
                 except:
-                    # Se è ancora alieno (es. Kanji, Emoji, Arabo), LO SALTIAMO
-                    # Ma grazie al prompt, questo non dovrebbe succedere quasi mai.
-                    pass
-                    
+                    pass     
         return "".join(output)
 
     dest_clean = clean_text_for_pdf(destination)
@@ -229,17 +223,21 @@ def create_complex_pdf(text, destination, meta_data):
             pdf.cell(0, 10, clean_line.replace('**', ''), 1, 1, 'C', fill=True)
             pdf.ln(5)
             
+        # --- FIX ASTERISCHI NEGLI ELENCHI ---
         elif line.strip().startswith('* ') or line.strip().startswith('- '): 
             pdf.set_font("Helvetica", '', 11)
             pdf.set_text_color(20, 20, 20)
             pdf.set_x(15)
             pdf.cell(5, 6, chr(149), 0, 0)
-            pdf.multi_cell(0, 6, clean_line.replace('* ', '').replace('- ', ''))
+            # Qui puliamo anche i doppi asterischi interni
+            content = clean_line.replace('* ', '').replace('- ', '').replace('**', '')
+            pdf.multi_cell(0, 6, content)
             
         else: 
             if line.strip():
                 pdf.set_font("Helvetica", '', 11)
                 pdf.set_text_color(40, 40, 40)
+                # Qui puliamo i doppi asterischi nel testo normale
                 pdf.multi_cell(0, 6, clean_line.replace('**', ''))
                 pdf.ln(1)
 
@@ -419,7 +417,7 @@ with st.container():
                     # {destination.upper()}: [Sottotitolo]
                     **IL VERDETTO SUL BUDGET: € {budget}** (Stato: Lusso/Più che adeguato/Sufficiente/Stretto/Impossibile)
                     ## CAPITOLO 1: LA PREPARAZIONE (Voli, eSim, Assicurazione)
-                    [Se la destinazione è all'estero dare informazioni sui voli dall'Italia, aeroporti principali: Milano, Bologna, Roma, Napoli. Verifica i prezzi aggiornati per il periodo prescelto e suggerisci Kiwi per strategia travel hack. Per destinazioni in Italia o raggiungibili più comodamente via terra suggerisci treni analizzando Omio per tariffe e tragitti. Fornisci prezzi E-sim Saily e assicuraizoni viaggi Heymondo che con il nostro link garantisce il 10% di sconto]
+                    [Se la destinazione è all'estero dare informazioni sui voli dall'Italia, aeroporti principali: Milano, Bologna, Roma, Napoli. Verifica i prezzi aggiornati per il periodo prescelto e suggerisci Kiwi per strategia travel hack. Per destinazioni in Italia o raggiungibili più comodamente via terra suggerisci treni analizzando Omio per tariffe e tragitti. Fornisci prezzi E-sim Saily e assicurazioni viaggi Heymondo che con il nostro link garantisce il 10% di sconto]
                     ## CAPITOLO 2: DOVE DORMIRE (Strategie alloggio)
                     [Suggerisci alloggi compatibili con la composizione dei viaggiatori, sia le zone della città, sia le strutture. Prediligi sistemazioni suggestive dove si possa entrare in connessione con il luogo, sempre in sicurezza e comodità soprattutto per famiglie con i bambini]
                     ## CAPITOLO 3: L'ITINERARIO GIORNO PER GIORNO (Dettagliato)
@@ -541,5 +539,3 @@ st.markdown("""
     </p>
 </div>
 """, unsafe_allow_html=True)
-
-
