@@ -390,7 +390,7 @@ with st.container():
                     model = genai.GenerativeModel("gemini-2.5-flash")
                     
                     prompt = f"""
-                    Agisci come un Travel Planner Senior. Crea un "Manuale Operativo di Viaggio" per: {destination}.
+                    Agisci come un Travel Planner Senior, valuta la lunghezza del viaggio e aumenta o riduci il numero delle città visitabili sulla base del tempo e del budget a disposizione. Non pianifichi solo un viaggio, pianifichi il sogno di una vita, questo viaggio deve essere il migliore mai realizzato. Crea un "Manuale Operativo di Viaggio" per: {destination}.
                     
                     DATI:
                     - Durata: {duration} notti ({start_date} - {end_date})
@@ -399,15 +399,29 @@ with st.container():
                     
                     STRUTTURA TITOLI (Usa ESATTAMENTE questi):
                     # {destination.upper()}: [Sottotitolo]
-                    **IL VERDETTO SUL BUDGET: € {budget}** (Stato: Sufficiente/Stretto/Impossibile)
+                    **IL VERDETTO SUL BUDGET: € {budget}** (Stato: Lusso/Più che adeguato/Sufficiente/Stretto/Impossibile)
                     ## CAPITOLO 1: LA PREPARAZIONE (Voli, eSim, Assicurazione)
+                    [Se la destinazione è all'estero dare informazioni sui voli dall'Italia, aeroporti principali: Milano, Bologna, Roma, Napoli. Verifica i prezzi aggiornati per il periodo prescelto e suggerisci Kiwi per strategia travel hack. Per destinazioni in Italia o raggiungibili più comodamente via terra suggerisci treni analizzando Omio per tariffe e tragitti]
                     ## CAPITOLO 2: DOVE DORMIRE (Strategie alloggio)
+                    [Suggerisci alloggi compatibili con la composizione dei viaggiatori, sia le zone della città, sia le strutture. Prediligi sistemazioni suggestive dove si possa entrare in connessione con il luogo, sempre in sicurezza e comodità soprattutto per famiglie con i bambini]
                     ## CAPITOLO 3: L'ITINERARIO GIORNO PER GIORNO (Dettagliato)
-                    ## CAPITOLO 4: SOPRAVVIVENZA PRATICA (Cibo)
-                    ## CAPITOLO 5: CONTO ECONOMICO FINALE
-                    
+                    [Ripartisci il viaggio in tappe sensate, ottimizza gli spostamenti, il tempo è prezioso e non va sprecato, idem per il budget. Valuta attentamente la qualità delle proposte, per le attrazioni e le escursioni prediligi quelle presenti su tiquts e dai informazioni precise sui prezzi. Valuta escursioni in linea con la composizione del gruppo e come per l'alloggio prediligi la scoperta del territorio, l'anima più vera del paese, la connessione con la terra e gli abitanti, gli usi e i costumi locali]
+                    ## CAPITOLO 4: COSA MANGIARE
+                    [per ogni tappa proponi piatti tipici del luogo nei ristoranti migliori che il loro budget può comprare, analizza tripadvisor per valutare le migliori alternative sempre nella logica di entrare in connessione con il territorio. I viaggiatori non sono vacanzieri, devono poter assaporare letteralmente i luoghi che stanno visitando. Valuta anche i mercati e gli street food dove fare un'immersione nella cultura locale]
+                    ## CAPITOLO 5: CALENDARIO CULTURALE
+                    [I principali festival, fiere, ricorrenze e feste che i viaggiatori possono visitare tenendo presente le date del loro soggiorno]
+                    ## CAPITOLO 6: CONTO ECONOMICO FINALE
+                    ## CAPITOLO 7: INFORMAZIONI PRATICHE
+                    * **Sicurezza:** [Info]
+                    * **Clima:** [Info sui migliori periodi per visitare la città]
+                    * **Visti e requisiti:** [Info]
+                    * **Fuso orario:** [Info]
+                    * **Consigli utili:** [Info su valuta locale e prese elettriche, non usare mai simboli delle valute ma i loro codici, es. EUR, USD, GBP, ecc]
+                    ## CAPITOLO 9: CONCLUSIONE
+                    [Riflessione finale filosofica sul viaggio in questa città, descrivi l'essenza del viaggio]
+
                     REGOLE:
-                    1. Usa EURO per i costi.
+                    1. Usa EURO per i costi, usa il separatore delle migliaia.
                     2. Sii onesto sul budget.
                     3. Niente tabelle markdown.
                     """
@@ -509,3 +523,4 @@ st.markdown("""
     </p>
 </div>
 """, unsafe_allow_html=True)
+
