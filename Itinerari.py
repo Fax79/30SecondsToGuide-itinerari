@@ -436,7 +436,7 @@ with st.container():
                     * **Fuso orario:** [Info]
                     * **Consigli utili:** [Info su valuta locale e prese elettriche, non usare mai simboli delle valute ma i loro codici, es. EUR, USD, GBP, ecc]
                     ## CAPITOLO 9: CONCLUSIONE
-                    [Riflessione finale filosofica sul viaggio in questa città, descrivi l'essenza del viaggio]
+                    [Riflessione finale filosofica sul viaggio in questo Paese/Regione, descrivi l'essenza del viaggio]
 
                     REGOLE EXTRA:
                     1. Usa EURO per i costi, usa il separatore delle migliaia.
@@ -541,4 +541,5 @@ st.markdown("""
     </p>
 </div>
 """, unsafe_allow_html=True)
+
 
