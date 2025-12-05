@@ -69,16 +69,16 @@ def partner_button(label, link, image_file):
         st.link_button(label, link, use_container_width=True)
 
 # ==========================================
-# 🧙‍♂️ PDF ENGINE "WIZARD EDITION v3.1"
+# 🧙‍♂️ PDF ENGINE "WIZARD EDITION v3.2"
 # ==========================================
 def create_complex_pdf(text, destination, meta_data):
     
-    # --- FUNZIONE SPAZZINO 6.0 ---
+    # --- FUNZIONE SPAZZINO 7.0 (Surgical Precision) ---
     def clean_text_for_pdf(text_input):
         if not text_input: return ""
         
-        # 1. Rimozione Simboli Markdown
-        text_input = text_input.replace("**", "").replace("*", "")
+        # 1. Rimozione Bold Markdown (**) ma preservando il testo
+        text_input = text_input.replace("**", "") 
         
         # 2. Simboli critici
         replacements = {
@@ -117,7 +117,6 @@ def create_complex_pdf(text, destination, meta_data):
             self.set_font('Helvetica', 'B', 8)
             self.set_text_color(255, 255, 255)
             self.set_y(6)
-            # --- MODIFICA NOME ---
             self.cell(0, 0, f'TRAVEL PLAN: {dest_clean.upper()}', 0, 0, 'R')
             self.ln(15) 
             
@@ -145,7 +144,6 @@ def create_complex_pdf(text, destination, meta_data):
             self.ln(10)
             self.set_font('Helvetica', 'I', 14)
             self.set_text_color(100, 100, 100)
-            # --- MODIFICA NOME ---
             self.cell(0, 10, "Travel Plan Esclusivo", 0, 1, 'C')
             
             self.ln(20)
@@ -193,70 +191,93 @@ def create_complex_pdf(text, destination, meta_data):
     printed_ads = set()
     
     for line in lines:
+        # Pulizia base della riga
         clean_line = clean_text_for_pdf(line)
         line_upper = clean_line.upper()
         
-        # --- LOGICA ONE-SHOT ---
-        if "CAPITOLO 1" in line_upper and "flights" not in printed_ads:
-            make_box(pdf, "Prenota i voli migliori su Kiwi.com (Multitratta)", FLIGHT_LINK, "gray")
-            make_box(pdf, "eSim Saily: Internet immediato all'arrivo", ESIM_LINK, "green")
-            make_box(pdf, "Assicurazione Sanitaria: Sconto 10% Heymondo", INSURANCE_LINK, "yellow")
-            printed_ads.add("flights")
-            
-        elif "CAPITOLO 2" in line_upper and "hotel" not in printed_ads:
-            make_box(pdf, f"Verifica offerte Hotel a {dest_clean} su Expedia", HOTEL_LINK, "blue")
-            printed_ads.add("hotel")
-            
-        elif ("CAPITOLO 3" in line_upper or "INFO PRATICHE" in line_upper) and "car" not in printed_ads:
-            make_box(pdf, f"Noleggio Auto: Confronta prezzi con Auto Europe", RENTAL_LINK, "gray")
-            printed_ads.add("car")
-            
-        elif ("CAPITOLO 4" in line_upper or "COSA MANGIARE" in line_upper) and "tickets" not in printed_ads:
-             make_box(pdf, f"Biglietti Musei e Attrazioni a {dest_clean} su Tiqets", TIQETS_LINK, "orange")
-             printed_ads.add("tickets")
+        # --- RILEVAMENTO TIPO RIGA ---
+        is_header_1 = line.strip().startswith('# ')
+        is_header_2 = line.strip().startswith('## ')
+        is_bullet = line.strip().startswith('* ') or line.strip().startswith('- ')
+        is_verdict = "VERDETTO" in line_upper
 
-        # --- FORMATTAZIONE ---
-        if line.strip().startswith('# '): 
+        # --- FORMATTAZIONE E STAMPA TESTO (PRIMA del link) ---
+        if is_header_1: 
             pdf.ln(5)
             pdf.set_font("Helvetica", 'B', 20)
             pdf.set_text_color(44, 62, 80)
             pdf.multi_cell(0, 10, clean_line.replace('#', '').strip())
             pdf.ln(5)
             
-        elif line.strip().startswith('## '): 
+        elif is_header_2: 
             pdf.ln(5)
             pdf.set_font("Helvetica", 'B', 14)
             pdf.set_text_color(230, 126, 34) 
             pdf.multi_cell(0, 10, clean_line.replace('##', '').strip())
             
-        elif "VERDETTO" in line_upper: 
+        elif is_verdict: 
             pdf.ln(5)
             pdf.set_font("Helvetica", 'B', 12)
             pdf.set_fill_color(220, 220, 220)
-            clean_verdict = clean_line.replace('**', '').replace('*', '')
-            pdf.cell(0, 10, clean_verdict, 1, 1, 'C', fill=True)
+            pdf.cell(0, 10, clean_line.replace('*', '').strip(), 1, 1, 'C', fill=True)
             pdf.ln(5)
             
-        elif line.strip().startswith('* ') or line.strip().startswith('- '): 
+        elif is_bullet: 
             pdf.set_font("Helvetica", '', 11)
             pdf.set_text_color(20, 20, 20)
             pdf.set_x(15)
             pdf.cell(5, 6, chr(149), 0, 0)
-            content = clean_line.strip()[2:].replace('**', '') 
+            # FIX TAGLIO PAROLE: Usiamo Regex per togliere solo il puntino iniziale
+            # Rimuove "* " o "- " all'inizio, ma non taglia cieco [2:]
+            content = re.sub(r'^[\*-]\s*', '', clean_line).strip()
             pdf.multi_cell(0, 6, content)
         
         elif re.match(r'^\d+\.', line.strip()):
             pdf.set_font("Helvetica", 'B', 11)
             pdf.set_text_color(44, 62, 80)
             pdf.ln(2)
-            pdf.multi_cell(0, 6, clean_line.replace('**', ''))
+            pdf.multi_cell(0, 6, clean_line)
             
         else: 
             if line.strip():
                 pdf.set_font("Helvetica", '', 11)
                 pdf.set_text_color(40, 40, 40)
-                pdf.multi_cell(0, 6, clean_line.replace('**', ''))
+                pdf.multi_cell(0, 6, clean_line)
                 pdf.ln(1)
+
+        # --- LOGICA INIEZIONE LINK (DOPO aver stampato il testo) ---
+        # Analizziamo il contenuto della riga appena stampata per decidere se mettere un link SOTTO.
+        
+        # 1. VOLI (Kiwi)
+        if ("VOLO" in line_upper or "AEREO" in line_upper or "AEROPORTO" in line_upper) and "flights" not in printed_ads:
+            make_box(pdf, "Prenota i voli migliori su Kiwi.com (Multitratta)", FLIGHT_LINK, "gray")
+            printed_ads.add("flights")
+
+        # 2. ESIM (Saily) - Spesso associato a "Internet", "Connessione", "Dati"
+        if ("INTERNET" in line_upper or "ESIM" in line_upper or "CONNESSIONE" in line_upper or "SIM" in line_upper) and "esim" not in printed_ads:
+            make_box(pdf, "eSim Saily: Internet immediato all'arrivo", ESIM_LINK, "green")
+            printed_ads.add("esim")
+
+        # 3. ASSICURAZIONE (Heymondo)
+        if ("ASSICURAZIONE" in line_upper or "SANITARIA" in line_upper or "SICUREZZA" in line_upper) and "insurance" not in printed_ads:
+            make_box(pdf, "Assicurazione Sanitaria: Sconto 10% Heymondo", INSURANCE_LINK, "yellow")
+            printed_ads.add("insurance")
+
+        # 4. HOTEL (Expedia)
+        if ("HOTEL" in line_upper or "ALLOGGIO" in line_upper or "RIAD" in line_upper or "DORMIRE" in line_upper) and "hotel" not in printed_ads:
+            make_box(pdf, f"Verifica offerte Hotel a {dest_clean} su Expedia", HOTEL_LINK, "blue")
+            printed_ads.add("hotel")
+            
+        # 5. NOLEGGIO AUTO (Auto Europe)
+        if ("AUTO" in line_upper or "NOLEGGIO" in line_upper or "SPOSTAMENTI" in line_upper) and "car" not in printed_ads:
+            make_box(pdf, f"Noleggio Auto: Confronta prezzi con Auto Europe", RENTAL_LINK, "gray")
+            printed_ads.add("car")
+            
+        # 6. BIGLIETTI (Tiqets) - Trigger su Musei, Ingressi, Tour
+        if ("MUSEO" in line_upper or "INGRESSO" in line_upper or "BIGLIETT" in line_upper or "TOUR" in line_upper) and "tickets" not in printed_ads:
+             make_box(pdf, f"Biglietti Musei e Attrazioni a {dest_clean} su Tiqets", TIQETS_LINK, "orange")
+             printed_ads.add("tickets")
+
 
     # --- PAGINA PARTNER ---
     pdf.add_page()
@@ -309,7 +330,7 @@ def create_complex_pdf(text, destination, meta_data):
     return pdf.output(dest='S').encode('latin-1')
 
 # ==========================================
-# 🖥️ INTERFACCIA UTENTE (LAYOUT FIX)
+# 🖥️ INTERFACCIA UTENTE
 # ==========================================
 
 with st.sidebar:
@@ -371,8 +392,6 @@ st.write("")
 with st.container():
     st.info("🧙‍♂️ Inserisci i dettagli per ricevere un Travel Plan completo.")
     
-    # --- LAYOUT MOBILE FRIENDLY (Righe Logiche) ---
-    
     # RIGA 1: Destinazione e Budget
     c_dest, c_bud = st.columns([2, 1])
     with c_dest:
@@ -427,7 +446,6 @@ with st.container():
                 try:
                     model = genai.GenerativeModel("gemini-2.5-flash")
                     
-                    # --- MODIFICA PROMPT (TRAVEL PLAN) ---
                     prompt = f"""
                     Agisci come un Travel Planner Senior. Non pianifichi solo un viaggio, pianifichi il sogno di una vita. 
                     Crea un "Travel Plan" esclusivo per: {destination}.
@@ -486,7 +504,6 @@ with st.container():
 
     if 'wizard_pdf' in st.session_state:
         st.success("✅ Travel Plan pronto!")
-        # --- MODIFICA NOME FILE ---
         st.download_button(
             label="📥 SCARICA IL TRAVEL PLAN (PDF)",
             data=st.session_state['wizard_pdf'],
