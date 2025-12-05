@@ -5,6 +5,7 @@ import base64
 import datetime
 import unicodedata
 import os
+import re
 
 # --- CONFIGURAZIONE PAGINA ---
 if os.path.exists("logo.png"):
@@ -38,7 +39,7 @@ TIQETS_LINK = "https://tiqets.tpx.lt/XV1Urbnn"
 INSURANCE_LINK = "https://heymondo.it/?utm_medium=Afiliado&utm_source=30SECONDSTOGUIDE&utm_campaign=PRINCIPAL&cod_descuento=30SECONDSTOGUIDE&ag_campaign=INPUT&agencia=JzPWeAXXi7s0b94oPYh2FmTwaWKFpiCp1a8PkqOn&redirect=TEMPORAL"
 TRAIN_LINK = "https://www.omio.com"
 RESTAURANT_LINK = "https://www.tripadvisor.com"
-HOTEL_LINK = "https://www.booking.com"
+HOTEL_LINK = "https://www.expedia.com"
 TOUR_LINK = "https://www.getyourguide.com"
 
 # --- HELPER IMMAGINI ---
@@ -68,34 +69,35 @@ def partner_button(label, link, image_file):
         st.link_button(label, link, use_container_width=True)
 
 # ==========================================
-# 🧙‍♂️ PDF ENGINE "WIZARD EDITION"
+# 🧙‍♂️ PDF ENGINE "WIZARD EDITION v3.1"
 # ==========================================
 def create_complex_pdf(text, destination, meta_data):
     
-    # --- FUNZIONE SPAZZINO 5.0 (No Holes Strategy) ---
+    # --- FUNZIONE SPAZZINO 6.0 ---
     def clean_text_for_pdf(text_input):
         if not text_input: return ""
         
-        # 1. Simboli critici (Valute e punteggiatura smart)
+        # 1. Rimozione Simboli Markdown
+        text_input = text_input.replace("**", "").replace("*", "")
+        
+        # 2. Simboli critici
         replacements = {
-            "€": "EUR", "â‚¬": "EUR", 
+            "€": "EUR", "â¬": "EUR", 
             "$": "USD", "£": "GBP",
             "’": "'", "‘": "'", "“": '"', "”": '"', "–": "-", "—": "-", "…": "..."
         }
         for char, replacement in replacements.items():
             text_input = text_input.replace(char, replacement)
             
-        # 2. Normalizzazione NFC (Compatta accenti)
+        # 3. Normalizzazione NFC
         text_input = unicodedata.normalize('NFC', text_input)
         
         output = []
         for char in text_input:
             try:
-                # 3. Test Latin-1 (Se passa, è ok)
                 char.encode('latin-1')
                 output.append(char)
             except UnicodeEncodeError:
-                # 4. Fallback Intelligente:
                 decomposed = unicodedata.normalize('NFD', char)
                 stripped = "".join(c for c in decomposed if unicodedata.category(c) != 'Mn')
                 try:
@@ -115,7 +117,8 @@ def create_complex_pdf(text, destination, meta_data):
             self.set_font('Helvetica', 'B', 8)
             self.set_text_color(255, 255, 255)
             self.set_y(6)
-            self.cell(0, 0, f'MANUALE OPERATIVO: {dest_clean.upper()}', 0, 0, 'R')
+            # --- MODIFICA NOME ---
+            self.cell(0, 0, f'TRAVEL PLAN: {dest_clean.upper()}', 0, 0, 'R')
             self.ln(15) 
             
         def footer(self):
@@ -142,7 +145,8 @@ def create_complex_pdf(text, destination, meta_data):
             self.ln(10)
             self.set_font('Helvetica', 'I', 14)
             self.set_text_color(100, 100, 100)
-            self.cell(0, 10, "Manuale Operativo di Viaggio", 0, 1, 'C')
+            # --- MODIFICA NOME ---
+            self.cell(0, 10, "Travel Plan Esclusivo", 0, 1, 'C')
             
             self.ln(20)
             self.set_fill_color(255, 255, 255)
@@ -185,24 +189,33 @@ def create_complex_pdf(text, destination, meta_data):
 
     lines = text.split('\n')
     
+    # --- FLAGS ---
+    printed_ads = set()
+    
     for line in lines:
         clean_line = clean_text_for_pdf(line)
+        line_upper = clean_line.upper()
         
-        # --- TRIGGER CONTESTUALI ---
-        if "CAPITOLO 1: LA PREPARAZIONE" in clean_line.upper():
+        # --- LOGICA ONE-SHOT ---
+        if "CAPITOLO 1" in line_upper and "flights" not in printed_ads:
             make_box(pdf, "Prenota i voli migliori su Kiwi.com (Multitratta)", FLIGHT_LINK, "gray")
             make_box(pdf, "eSim Saily: Internet immediato all'arrivo", ESIM_LINK, "green")
             make_box(pdf, "Assicurazione Sanitaria: Sconto 10% Heymondo", INSURANCE_LINK, "yellow")
+            printed_ads.add("flights")
             
-        if "CAPITOLO 2: DOVE DORMIRE" in clean_line.upper():
-            make_box(pdf, f"Verifica disponibilita Hotel a {dest_clean} su Booking.com", HOTEL_LINK, "blue")
+        elif "CAPITOLO 2" in line_upper and "hotel" not in printed_ads:
+            make_box(pdf, f"Verifica offerte Hotel a {dest_clean} su Expedia", HOTEL_LINK, "blue")
+            printed_ads.add("hotel")
             
-        if "CAPITOLO 3:" in clean_line.upper() or "ITINERARIO" in clean_line.upper():
+        elif ("CAPITOLO 3" in line_upper or "INFO PRATICHE" in line_upper) and "car" not in printed_ads:
             make_box(pdf, f"Noleggio Auto: Confronta prezzi con Auto Europe", RENTAL_LINK, "gray")
+            printed_ads.add("car")
             
-        if "CAPITOLO 4:" in clean_line.upper() or "INFO PRATICHE" in clean_line.upper():
+        elif ("CAPITOLO 4" in line_upper or "COSA MANGIARE" in line_upper) and "tickets" not in printed_ads:
              make_box(pdf, f"Biglietti Musei e Attrazioni a {dest_clean} su Tiqets", TIQETS_LINK, "orange")
+             printed_ads.add("tickets")
 
+        # --- FORMATTAZIONE ---
         if line.strip().startswith('# '): 
             pdf.ln(5)
             pdf.set_font("Helvetica", 'B', 20)
@@ -216,32 +229,36 @@ def create_complex_pdf(text, destination, meta_data):
             pdf.set_text_color(230, 126, 34) 
             pdf.multi_cell(0, 10, clean_line.replace('##', '').strip())
             
-        elif line.strip().startswith('**') and 'VERDETTO' in line.upper(): 
+        elif "VERDETTO" in line_upper: 
             pdf.ln(5)
             pdf.set_font("Helvetica", 'B', 12)
             pdf.set_fill_color(220, 220, 220)
-            pdf.cell(0, 10, clean_line.replace('**', ''), 1, 1, 'C', fill=True)
+            clean_verdict = clean_line.replace('**', '').replace('*', '')
+            pdf.cell(0, 10, clean_verdict, 1, 1, 'C', fill=True)
             pdf.ln(5)
             
-        # --- FIX ASTERISCHI NEGLI ELENCHI ---
         elif line.strip().startswith('* ') or line.strip().startswith('- '): 
             pdf.set_font("Helvetica", '', 11)
             pdf.set_text_color(20, 20, 20)
             pdf.set_x(15)
             pdf.cell(5, 6, chr(149), 0, 0)
-            # Qui puliamo anche i doppi asterischi interni
-            content = clean_line.replace('* ', '').replace('- ', '').replace('**', '')
+            content = clean_line.strip()[2:].replace('**', '') 
             pdf.multi_cell(0, 6, content)
+        
+        elif re.match(r'^\d+\.', line.strip()):
+            pdf.set_font("Helvetica", 'B', 11)
+            pdf.set_text_color(44, 62, 80)
+            pdf.ln(2)
+            pdf.multi_cell(0, 6, clean_line.replace('**', ''))
             
         else: 
             if line.strip():
                 pdf.set_font("Helvetica", '', 11)
                 pdf.set_text_color(40, 40, 40)
-                # Qui puliamo i doppi asterischi nel testo normale
                 pdf.multi_cell(0, 6, clean_line.replace('**', ''))
                 pdf.ln(1)
 
-    # --- PAGINA PARTNER FINALE ---
+    # --- PAGINA PARTNER ---
     pdf.add_page()
     
     def make_sponsor_box(title, subtitle, link, highlight=False):
@@ -270,7 +287,7 @@ def create_complex_pdf(text, destination, meta_data):
     pdf.set_text_color(100, 100, 100)
     pdf.cell(0, 10, "Già visti nella guida...", 0, 1, 'L')
     pdf.ln(2)
-    make_sponsor_box("Booking.com", "Hotel e alloggi", HOTEL_LINK)
+    make_sponsor_box("Expedia", "Hotel e Voli", HOTEL_LINK)
     make_sponsor_box("Tiqets", "Biglietti musei e attrazioni", TIQETS_LINK) 
     make_sponsor_box("Kiwi.com", "Voli low cost", FLIGHT_LINK)
     make_sponsor_box("Heymondo", "Assicurazione viaggio", INSURANCE_LINK)
@@ -289,11 +306,10 @@ def create_complex_pdf(text, destination, meta_data):
     make_sponsor_box("Taxi Locale", "Kiwitaxi per spostamenti urbani", TAXI_LINK, highlight=True)
     make_sponsor_box("Ristoranti", "Recensioni su TripAdvisor", RESTAURANT_LINK, highlight=True)
 
-    # --- FIX CRASH BYTES: Aggiunto .encode('latin-1') ---
     return pdf.output(dest='S').encode('latin-1')
 
 # ==========================================
-# 🖥️ INTERFACCIA UTENTE
+# 🖥️ INTERFACCIA UTENTE (LAYOUT FIX)
 # ==========================================
 
 with st.sidebar:
@@ -305,7 +321,7 @@ with st.sidebar:
     st.markdown("---")
     st.caption("✈️ PRENOTAZIONI")
     partner_button("Voli (Kiwi)", FLIGHT_LINK, "btn_kiwi.png")
-    partner_button("Hotel (Booking)", HOTEL_LINK, "btn_booking.png")
+    partner_button("Hotel (Expedia)", HOTEL_LINK, "btn_booking.png")
     partner_button("Transfers (Welcome)", TRANSF_LINK, "btn_wp.png")
     partner_button("Auto (Autoeurope)", RENTAL_LINK, "btn_autoe.png")
     partner_button("Treni (Omio)", TRAIN_LINK, "btn_omio.png")
@@ -353,19 +369,32 @@ st.markdown("""
 st.write("") 
 
 with st.container():
-    st.info("🧙‍♂️ Inserisci i dettagli per ricevere un Manuale Operativo completo.")
+    st.info("🧙‍♂️ Inserisci i dettagli per ricevere un Travel Plan completo.")
     
-    c1, c2 = st.columns(2)
-    with c1:
-        destination = st.text_input("Destinazione (Regione/Paese)", placeholder="Es. Giappone, Irlanda...")
-        start_date = st.date_input("Data Partenza", datetime.date.today() + datetime.timedelta(days=30))
-        adults = st.number_input("Numero Adulti", min_value=1, value=2)
-        
-    with c2:
+    # --- LAYOUT MOBILE FRIENDLY (Righe Logiche) ---
+    
+    # RIGA 1: Destinazione e Budget
+    c_dest, c_bud = st.columns([2, 1])
+    with c_dest:
+        destination = st.text_input("Destinazione (Regione/Paese)", placeholder="Es. Giappone...")
+    with c_bud:
         budget = st.number_input("Budget Totale (€)", min_value=500, value=3000, step=100)
-        end_date = st.date_input("Data Ritorno", datetime.date.today() + datetime.timedelta(days=37))
-        kids = st.number_input("Numero Minorenni", min_value=0, value=0)
+    
+    # RIGA 2: Date
+    c_start, c_end = st.columns(2)
+    with c_start:
+         start_date = st.date_input("Data Partenza", datetime.date.today() + datetime.timedelta(days=30))
+    with c_end:
+         end_date = st.date_input("Data Ritorno", datetime.date.today() + datetime.timedelta(days=37))
 
+    # RIGA 3: Persone
+    c_ad, c_kids = st.columns(2)
+    with c_ad:
+         adults = st.number_input("Numero Adulti", min_value=1, value=2)
+    with c_kids:
+         kids = st.number_input("Numero Minorenni", min_value=0, value=0)
+
+    # Kids Ages
     kids_ages = []
     if kids > 0:
         st.caption("Età dei ragazzi:")
@@ -383,7 +412,7 @@ with st.container():
     
     is_generated = 'wizard_pdf' in st.session_state
     
-    if st.button("✨ Crea il mio Manuale", type="primary", use_container_width=True, disabled=is_generated):
+    if st.button("✨ Crea il mio Travel Plan", type="primary", use_container_width=True, disabled=is_generated):
         if not destination:
             st.warning("Inserisci una destinazione!")
         else:
@@ -391,55 +420,52 @@ with st.container():
             pax_desc = f"{adults} Adulti"
             if kids > 0: pax_desc += f", {kids} Ragazzi ({', '.join(kids_ages)} anni)"
             
-            # Timestamp nel log
             timestamp = datetime.datetime.now().strftime("%d/%m %H:%M")
             get_shared_logs().append(f"🧙‍♂️ {destination} ({timestamp})")
             
-            with st.spinner(f"🧙‍♂️ Sto elaborando l'itinerario per {destination}..."):
+            with st.spinner(f"🧙‍♂️ Sto elaborando il Travel Plan per {destination}..."):
                 try:
                     model = genai.GenerativeModel("gemini-2.5-flash")
                     
+                    # --- MODIFICA PROMPT (TRAVEL PLAN) ---
                     prompt = f"""
-                    Agisci come un Travel Planner Senior, valuta la lunghezza del viaggio e aumenta o riduci il numero delle città visitabili sulla base del tempo e del budget a disposizione. Non pianifichi solo un viaggio, pianifichi il sogno di una vita, questo viaggio deve essere il migliore mai realizzato. Crea un "Manuale Operativo di Viaggio" per: {destination}.
+                    Agisci come un Travel Planner Senior. Non pianifichi solo un viaggio, pianifichi il sogno di una vita. 
+                    Crea un "Travel Plan" esclusivo per: {destination}.
                     
                     DATI:
                     - Durata: {duration} notti ({start_date} - {end_date})
                     - Gruppo: {pax_desc}
                     - Budget: € {budget}
                     
-                    REGOLE TASSATIVE SULLA LINGUA (ANTI-CRASH):
-                    1. Usa SOLO l'alfabeto Latino/Italiano esteso.
-                    2. NON USARE MAI Ideogrammi (Kanji), caratteri Cirillici, Arabi o Emojis.
-                    3. SE devi nominare un luogo locale (es. un tempio in Giappone), usa SOLO la TRASLITTERAZIONE (es. scrivi "Kinkaku-ji" e NON i kanji).
-                    4. Simboli Valute: scrivi "EUR", "USD", "JPY" invece di simboli grafici.
+                    REGOLE TASSATIVE:
+                    1. Usa SOLO l'alfabeto Latino/Italiano esteso. NIENTE Kanji/Cirillico/Emoji.
+                    2. TRASLITTERA i nomi locali.
+                    3. Simboli Valute: scrivi "EUR", "USD".
+                    4. VIETATO L'USO DI ASTERISCHI O GRASSETTO MARKDOWN.
+                    5. VIETATO USARE LISTE ANNIDATE.
                     
                     STRUTTURA TITOLI (Usa ESATTAMENTE questi):
                     # {destination.upper()}: [Sottotitolo]
                     **IL VERDETTO SUL BUDGET: € {budget}** (Stato: Lusso/Più che adeguato/Sufficiente/Stretto/Impossibile)
                     ## CAPITOLO 1: LA PREPARAZIONE (Voli, eSim, Assicurazione)
-                    [Se la destinazione è all'estero dare informazioni sui voli dall'Italia, aeroporti principali: Milano, Bologna, Roma, Napoli. Verifica i prezzi aggiornati per il periodo prescelto e suggerisci Kiwi per strategia travel hack. Per destinazioni in Italia o raggiungibili più comodamente via terra suggerisci treni analizzando Omio per tariffe e tragitti. Fornisci prezzi E-sim Saily e assicurazioni viaggi Heymondo che con il nostro link garantisce il 10% di sconto]
+                    [Info voli, eSim Saily, assicurazione Heymondo con sconto 10%]
                     ## CAPITOLO 2: DOVE DORMIRE (Strategie alloggio)
-                    [Suggerisci alloggi compatibili con la composizione dei viaggiatori, sia le zone della città, sia le strutture. Prediligi sistemazioni suggestive dove si possa entrare in connessione con il luogo, sempre in sicurezza e comodità soprattutto per famiglie con i bambini]
+                    [Suggerisci alloggi compatibili con il gruppo. Prediligi sistemazioni suggestive]
                     ## CAPITOLO 3: L'ITINERARIO GIORNO PER GIORNO (Dettagliato)
-                    [Ripartisci il viaggio in tappe sensate, ottimizza gli spostamenti, il tempo è prezioso e non va sprecato, idem per il budget. Valuta attentamente la qualità delle proposte, per le attrazioni e le escursioni prediligi quelle presenti su tiquts e dai informazioni precise sui prezzi. Valuta escursioni in linea con la composizione del gruppo e come per l'alloggio prediligi la scoperta del territorio, l'anima più vera del paese, la connessione con la terra e gli abitanti, gli usi e i costumi locali]
+                    [Itinerario ottimizzato. Prediligi attrazioni su Tiqets. Scoperta del territorio]
                     ## CAPITOLO 4: COSA MANGIARE
-                    [per ogni tappa proponi piatti tipici del luogo nei ristoranti migliori che il loro budget può comprare, analizza tripadvisor per valutare le migliori alternative sempre nella logica di entrare in connessione con il territorio. I viaggiatori non sono vacanzieri, devono poter assaporare letteralmente i luoghi che stanno visitando. Valuta anche i mercati e gli street food dove fare un'immersione nella cultura locale]
+                    [Piatti tipici, ristoranti (Tripadvisor), street food]
                     ## CAPITOLO 5: CALENDARIO CULTURALE
-                    [I principali festival, fiere, ricorrenze e feste che i viaggiatori possono visitare tenendo presente le date del loro soggiorno]
+                    [Festival e ricorrenze]
                     ## CAPITOLO 6: CONTO ECONOMICO FINALE
                     ## CAPITOLO 7: INFORMAZIONI PRATICHE
-                    * **Sicurezza:** [Info]
-                    * **Clima:** [Info sui migliori periodi per visitare la città]
-                    * **Visti e requisiti:** [Info]
-                    * **Fuso orario:** [Info]
-                    * **Consigli utili:** [Info su valuta locale e prese elettriche, non usare mai simboli delle valute ma i loro codici, es. EUR, USD, GBP, ecc]
+                    * Sicurezza: [Info]
+                    * Clima: [Info]
+                    * Visti e requisiti: [Info]
+                    * Fuso orario: [Info]
+                    * Consigli utili: [Valuta e prese]
                     ## CAPITOLO 9: CONCLUSIONE
-                    [Riflessione finale filosofica sul viaggio in questo Paese/Regione, descrivi l'essenza del viaggio]
-
-                    REGOLE EXTRA:
-                    1. Usa EURO per i costi, usa il separatore delle migliaia.
-                    2. Sii onesto sul budget.
-                    3. Niente tabelle markdown.
+                    [Riflessione finale filosofica sul viaggio]
                     """
                     
                     response = model.generate_content(prompt)
@@ -459,18 +485,19 @@ with st.container():
                     st.error(f"Errore del Mago: {e}")
 
     if 'wizard_pdf' in st.session_state:
-        st.success("✅ Itinerario pronto!")
+        st.success("✅ Travel Plan pronto!")
+        # --- MODIFICA NOME FILE ---
         st.download_button(
-            label="📥 SCARICA IL MANUALE (PDF)",
+            label="📥 SCARICA IL TRAVEL PLAN (PDF)",
             data=st.session_state['wizard_pdf'],
-            file_name=f"Manuale_{destination.replace(' ', '_')}.pdf",
+            file_name=f"Itinerario_{destination.replace(' ', '_')}.pdf",
             mime="application/pdf",
             use_container_width=True,
             on_click=reset_app
         )
 
 # =========================================================
-# 🏨 TRAVEL HUB (Identico alla Home)
+# 🏨 TRAVEL HUB
 # =========================================================
 st.markdown("---")
 st.subheader("✈️ I migliori strumenti per il tuo viaggio")
@@ -481,7 +508,7 @@ with c1:
     partner_button("Voli Kiwi", FLIGHT_LINK, "btn_kiwi.png")
 with c2:
     st.caption("🏨 **Hotel**")
-    partner_button("Booking", HOTEL_LINK, "btn_booking.png")
+    partner_button("Expedia", HOTEL_LINK, "btn_booking.png") 
 with c3:
     st.caption("🚘 **Transfer**")
     partner_button("Welcome Pickups", TRANSF_LINK, "btn_wp.png")
@@ -532,7 +559,7 @@ st.markdown("""
     <p>
         Questo strumento avanzato di <strong>30SecondsToGuide</strong> pianifica viaggi complessi analizzando il tuo budget.
         Inserisci destinazione, date, composizione del gruppo e budget massimo: l'AI genererà un 
-        <strong>Manuale Operativo</strong> completo con strategie di spesa, itinerari giornalieri e consigli logistici.
+        <strong>Travel Plan</strong> completo con strategie di spesa, itinerari giornalieri e consigli logistici.
     </p>
     <p>
         Il servizio è <strong>gratuito al 100%</strong>.
