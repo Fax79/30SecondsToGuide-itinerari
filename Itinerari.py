@@ -461,11 +461,12 @@ with st.container():
                     3. Simboli Valute: scrivi "EUR", "USD".
                     4. VIETATO L'USO DI ASTERISCHI O GRASSETTO MARKDOWN.
                     5. VIETATO USARE LISTE ANNIDATE.
+                    6. USA PREZZI IN EURO e con separatore migliaia.
                     
                     STRUTTURA TITOLI (Usa ESATTAMENTE questi):
                     # {destination.upper()}: [Sottotitolo]
                     **IL VERDETTO SUL BUDGET: € {budget}** (Stato: Lusso/Più che adeguato/Sufficiente/Stretto/Impossibile)
-                    ## CAPITOLO 1: LA PREPARAZIONE (Voli, eSim, Assicurazione)
+                    ## CAPITOLO 1: LA PREPARAZIONE
                     [Info voli, eSim Saily, assicurazione Heymondo con sconto 10%]
                     ## CAPITOLO 2: DOVE DORMIRE (Strategie alloggio)
                     [Suggerisci alloggi compatibili con il gruppo. Prediligi sistemazioni suggestive]
@@ -583,3 +584,4 @@ st.markdown("""
     </p>
 </div>
 """, unsafe_allow_html=True)
+
