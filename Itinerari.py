@@ -457,7 +457,9 @@ with st.container():
                     model = genai.GenerativeModel("gemini-2.5-flash")
                     
                     prompt = f"""
-                    Agisci come un Travel Planner Senior. Non pianifichi solo un viaggio, pianifichi il sogno di una vita. 
+                    Agisci come un Travel Planner Senior. Non pianifichi solo un viaggio, pianifichi il sogno di una vita.
+                    Razionalizza il tempo, visita quanti più posti possibili con {duration} notti a disposizione.
+                    Valuta la densità degli impegni giornalieri perché siano fattibili. Presta attenzione ad essere razionale negli spostamenti per massimizzare il tempo a disposizione.
                     Crea un "Travel Plan" esclusivo per: {destination}.
                     
                     DATI:
@@ -472,7 +474,8 @@ with st.container():
                     4. VIETATO L'USO DI ASTERISCHI O GRASSETTO MARKDOWN.
                     5. VIETATO USARE LISTE ANNIDATE.
                     6. INDICA TUTTI I PREZZI IN EURO. USA SEPARATORE MIGLIAIA.
-                    
+                    7. USA IL CALCOLO DELLA DURATA {duration}, NON RICALCOLARE.
+                    8. NON SCRIVERE I TUOI PENSIERI INTERNI ("HO SBAGLIATO", "DEVO USARE QUESTA REGOLA", "RICALCOLO") E SCRIVI SOLO LA VERSIONE FINALE.                    
                     STRUTTURA TITOLI (Usa ESATTAMENTE questi):
                     # {destination.upper()}: [Sottotitolo]
                     **IL VERDETTO SUL BUDGET: € {budget}** (Stato: Lusso/Più che adeguato/Sufficiente/Stretto/Impossibile)
@@ -595,3 +598,4 @@ st.markdown("""
     </p>
 </div>
 """, unsafe_allow_html=True)
+
