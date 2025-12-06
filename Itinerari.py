@@ -69,7 +69,7 @@ def partner_button(label, link, image_file):
         st.link_button(label, link, use_container_width=True)
 
 # ==========================================
-# 🧙‍♂️ PDF ENGINE "WIZARD EDITION v4.1"
+# 🧙‍♂️ PDF ENGINE "WIZARD EDITION v4.3 DYNAMIC"
 # ==========================================
 def create_complex_pdf(text, destination, meta_data):
     
@@ -100,6 +100,8 @@ def create_complex_pdf(text, destination, meta_data):
         return "".join(output)
 
     dest_clean = clean_text_for_pdf(destination)
+    # Recupero mese in sicurezza
+    month_clean = clean_text_for_pdf(meta_data.get('month_name', ''))
 
     class WizardPDF(FPDF):
         def header(self):
@@ -157,7 +159,7 @@ def create_complex_pdf(text, destination, meta_data):
         text = clean_text_for_pdf(text)
         colors = {
             "blue": (230, 240, 255),    # Blu Expedia
-            "green": (235, 255, 235),   # Verde Saily/Kiwi/Trip
+            "green": (235, 255, 235),   # Verde Saily/Kiwi
             "yellow": (255, 250, 225),  # Giallo Heymondo
             "orange": (255, 240, 230),  # Arancio Tiqets
             "purple": (245, 235, 255)   # Viola Omio/Auto/Welcome
@@ -187,29 +189,30 @@ def create_complex_pdf(text, destination, meta_data):
         
         # --- LOGICA BLINDATA LINK A FINE CAPITOLO ---
         
-        # Fine Capitolo 1 (Trigger su inizio Cap 2)
+        # Fine Capitolo 1
         if "## CAPITOLO 2" in line_upper and not inserted_ch1:
-            make_box(pdf, "Prenota i voli migliori su Kiwi.com (Multitratta)", FLIGHT_LINK, "green")
+            # === BANNER DINAMICO ===
+            banner_text = f"Voli per {month_clean}? Verifica tariffe migliori per {dest_clean} su Kiwi.com"
+            make_box(pdf, banner_text, FLIGHT_LINK, "green")
+            # =======================
             make_box(pdf, "eSim Saily: Internet immediato all'arrivo", ESIM_LINK, "green")
             make_box(pdf, "Assicurazione Sanitaria: Sconto 10% Heymondo", INSURANCE_LINK, "yellow")
             inserted_ch1 = True
             
-        # Fine Capitolo 2 (Trigger su inizio Cap 3)
+        # Fine Capitolo 2
         elif "## CAPITOLO 3" in line_upper and not inserted_ch2:
             make_box(pdf, f"Verifica offerte Hotel a {dest_clean} su Expedia", HOTEL_LINK, "blue")
-            # SPOSTATO QUI: Welcome Pickups
             make_box(pdf, "Transfer privati ad un prezzo WOW! da e per l'aeroporto", TRANSF_LINK, "purple")
             inserted_ch2 = True
 
-        # Fine Capitolo 3 (Trigger su inizio Cap 4)
+        # Fine Capitolo 3
         elif "## CAPITOLO 4" in line_upper and not inserted_ch3:
-            # NUOVO ORDINE: Tiqets -> Auto Europe -> Omio
             make_box(pdf, f"Biglietti Attrazioni a {dest_clean} su Tiqets", TIQETS_LINK, "orange")
             make_box(pdf, "Noleggio Auto: Migliori tariffe con Auto Europe", RENTAL_LINK, "purple")
             make_box(pdf, "Treni e Bus: Prenota su Omio", TRAIN_LINK, "purple")
             inserted_ch3 = True
             
-        # Fine Capitolo 4 (Trigger su inizio Cap 5)
+        # Fine Capitolo 4
         elif "## CAPITOLO 5" in line_upper and not inserted_ch4:
             make_box(pdf, "Ristoranti: Leggi le recensioni su TripAdvisor", RESTAURANT_LINK, "green")
             inserted_ch4 = True
@@ -257,7 +260,7 @@ def create_complex_pdf(text, destination, meta_data):
                 pdf.multi_cell(0, 6, clean_line)
                 pdf.ln(1)
 
-    # --- PAGINA PARTNER FINALE RIORGANIZZATA ---
+    # --- PAGINA PARTNER ---
     pdf.add_page()
     
     def make_sponsor_box(title, subtitle, link, highlight=False):
@@ -287,12 +290,11 @@ def create_complex_pdf(text, destination, meta_data):
     pdf.cell(0, 10, "Già visti nella guida...", 0, 1, 'L')
     pdf.ln(2)
     
-    # Lista "Già Visti" aggiornata con tutti i servizi inclusi nel testo
     make_sponsor_box("Expedia", "Hotel e Voli", HOTEL_LINK)
     make_sponsor_box("Tiqets", "Biglietti musei e attrazioni", TIQETS_LINK) 
-    make_sponsor_box("Welcome Pickups", "Transfer aeroportuali", TRANSF_LINK) # Spostato qui
-    make_sponsor_box("Auto Europe", "Noleggio Auto", RENTAL_LINK)           # Spostato qui
-    make_sponsor_box("Omio", "Treni e Bus", TRAIN_LINK)                     # Spostato qui
+    make_sponsor_box("Welcome Pickups", "Transfer aeroportuali", TRANSF_LINK) 
+    make_sponsor_box("Auto Europe", "Noleggio Auto", RENTAL_LINK)           
+    make_sponsor_box("Omio", "Treni e Bus", TRAIN_LINK)                     
     make_sponsor_box("Kiwi.com", "Voli low cost", FLIGHT_LINK)
     make_sponsor_box("Heymondo", "Assicurazione viaggio", INSURANCE_LINK)
     make_sponsor_box("Saily", "eSim internazionale", ESIM_LINK)
@@ -304,7 +306,6 @@ def create_complex_pdf(text, destination, meta_data):
     pdf.cell(0, 10, "ALTRI SERVIZI INDISPENSABILI", 0, 1, 'L')
     pdf.ln(2)
     
-    # Lista "Altri" ridotta
     make_sponsor_box("Deposito Bagagli", "Libera le mani con Radical Storage", LUGGAGE_LINK, highlight=True)
     make_sponsor_box("Rimborsi Voli", "Volo in ritardo? Chiedi risarcimento con AirHelp", REIMB_LINK, highlight=True)
     make_sponsor_box("Taxi Locale", "Kiwitaxi per spostamenti urbani", TAXI_LINK, highlight=True)
@@ -374,10 +375,17 @@ st.write("")
 with st.container():
     st.info("🧙‍♂️ Inserisci i dettagli per ricevere un Travel Plan completo.")
     
+    # --- MAPPING MESI ---
+    mesi = {
+        1: "Gennaio", 2: "Febbraio", 3: "Marzo", 4: "Aprile",
+        5: "Maggio", 6: "Giugno", 7: "Luglio", 8: "Agosto",
+        9: "Settembre", 10: "Ottobre", 11: "Novembre", 12: "Dicembre"
+    }
+
     # RIGA 1
     c_dest, c_bud = st.columns([2, 1])
     with c_dest:
-        destination = st.text_input("Destinazione (Città/Regione/Paese)", placeholder="Es. New York, Provenza, Giappone...")
+        destination = st.text_input("Destinazione (Regione/Paese)", placeholder="Es. Giappone...")
     with c_bud:
         budget = st.number_input("Budget Totale (€)", min_value=500, value=3000, step=100)
     
@@ -420,6 +428,9 @@ with st.container():
             duration = (end_date - start_date).days
             pax_desc = f"{adults} Adulti"
             if kids > 0: pax_desc += f", {kids} Ragazzi ({', '.join(kids_ages)} anni)"
+            
+            # Recupero nome mese
+            mese_partenza = mesi[start_date.month]
             
             timestamp = datetime.datetime.now().strftime("%d/%m %H:%M")
             get_shared_logs().append(f"🧙‍♂️ {destination} ({timestamp})")
@@ -475,7 +486,8 @@ with st.container():
                     meta = {
                         "dates": f"{start_date.strftime('%d/%m')} - {end_date.strftime('%d/%m/%Y')}",
                         "pax": f"{adults} Ad + {kids} Bimbi",
-                        "budget": f"EUR {budget}"
+                        "budget": f"EUR {budget}",
+                        "month_name": mese_partenza
                     }
                     
                     pdf_bytes = create_complex_pdf(text_content, destination, meta)
