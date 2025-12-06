@@ -207,8 +207,8 @@ def create_complex_pdf(text, destination, meta_data):
         if "## CAPITOLO 2" in line_upper and not inserted_ch1:
             banner_text = f"I biglietti dei voli in {month_clean} aumentano? Blocca le tariffe migliori su Kiwi.com"
             make_box(pdf, banner_text, FLIGHT_LINK, "green")
-            make_box(pdf, "eSim Saily: Internet immediato all'arrivo senza acquistodi SIM locali", ESIM_LINK, "green")
-            make_box(pdf, "Non viaggiare MAI senza Assicurazione Sanitaria: Approfitta QUI dello sconto 10% con Heymondo", INSURANCE_LINK, "yellow")
+            make_box(pdf, "eSim Saily: Internet immediato all'arrivo senza acquistodi SIM locali", ESIM_LINK, "yellow")
+            make_box(pdf, "MAI senza Assicurazione Sanitaria: Approfitta QUI dello sconto 10% con Heymondo", INSURANCE_LINK, "green")
             inserted_ch1 = True
             
         elif "## CAPITOLO 3" in line_upper and not inserted_ch2:
@@ -588,5 +588,6 @@ st.markdown("""
     </p>
 </div>
 """, unsafe_allow_html=True)
+
 
 
