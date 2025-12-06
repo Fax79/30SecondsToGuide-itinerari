@@ -69,29 +69,21 @@ def partner_button(label, link, image_file):
         st.link_button(label, link, use_container_width=True)
 
 # ==========================================
-# 🧙‍♂️ PDF ENGINE "WIZARD EDITION v3.2"
+# 🧙‍♂️ PDF ENGINE "WIZARD EDITION v4.0"
 # ==========================================
 def create_complex_pdf(text, destination, meta_data):
     
-    # --- FUNZIONE SPAZZINO 7.0 (Surgical Precision) ---
+    # --- FUNZIONE SPAZZINO 7.1 ---
     def clean_text_for_pdf(text_input):
         if not text_input: return ""
-        
-        # 1. Rimozione Bold Markdown (**) ma preservando il testo
         text_input = text_input.replace("**", "") 
-        
-        # 2. Simboli critici
         replacements = {
-            "€": "EUR", "â¬": "EUR", 
-            "$": "USD", "£": "GBP",
+            "€": "EUR", "â¬": "EUR", "$": "USD", "£": "GBP",
             "’": "'", "‘": "'", "“": '"', "”": '"', "–": "-", "—": "-", "…": "..."
         }
         for char, replacement in replacements.items():
             text_input = text_input.replace(char, replacement)
-            
-        # 3. Normalizzazione NFC
         text_input = unicodedata.normalize('NFC', text_input)
-        
         output = []
         for char in text_input:
             try:
@@ -132,31 +124,25 @@ def create_complex_pdf(text, destination, meta_data):
             self.add_page()
             self.set_fill_color(245, 245, 245) 
             self.rect(0, 0, 210, 297, 'F') 
-            
             if os.path.exists("logo.png"):
                 self.image("logo.png", x=80, y=30, w=50)
-            
             self.ln(80)
             self.set_font('Helvetica', 'B', 36)
             self.set_text_color(44, 62, 80)
             self.multi_cell(0, 15, dest.upper(), align='C')
-            
             self.ln(10)
             self.set_font('Helvetica', 'I', 14)
             self.set_text_color(100, 100, 100)
             self.cell(0, 10, "Travel Plan Esclusivo", 0, 1, 'C')
-            
             self.ln(20)
             self.set_fill_color(255, 255, 255)
             self.rect(55, 140, 100, 50, 'F')
-            
             self.set_y(145)
             self.set_font('Helvetica', 'B', 10)
             clean_budget = clean_text_for_pdf(meta['budget'])
             self.cell(0, 6, f"Date: {meta['dates']}", 0, 1, 'C')
             self.cell(0, 6, f"Viaggiatori: {meta['pax']}", 0, 1, 'C')
             self.cell(0, 6, f"Budget Target: {clean_budget}", 0, 1, 'C')
-            
             self.set_y(260)
             self.set_font('Helvetica', '', 10)
             self.cell(0, 10, "GENERATO CON www.30secondstoguide.it", 0, 0, 'C', link="https://www.30secondstoguide.it")
@@ -166,15 +152,17 @@ def create_complex_pdf(text, destination, meta_data):
     pdf.make_cover(dest_clean, meta_data)
     pdf.add_page()
     
-    # --- BOX CONTESTUALE ---
+    # --- BOX CONTESTUALE COLORATO (NO GRIGIO) ---
     def make_box(pdf_obj, text, link, color="blue"):
         text = clean_text_for_pdf(text)
         colors = {
-            "blue": (235, 245, 255), "green": (240, 255, 240),
-            "yellow": (255, 252, 235), "orange": (255, 245, 235),
-            "gray": (245, 245, 245)
+            "blue": (230, 240, 255),    # Blu Expedia
+            "green": (235, 255, 235),   # Verde Saily/Kiwi
+            "yellow": (255, 250, 225),  # Giallo Heymondo
+            "orange": (255, 240, 230),  # Arancio Tiqets
+            "purple": (245, 235, 255)   # Viola Omio/Auto
         }
-        r, g, b = colors.get(color, (245,245,245))
+        r, g, b = colors.get(color, (230, 240, 255))
         pdf_obj.ln(3)
         pdf_obj.set_fill_color(r, g, b)
         pdf_obj.set_draw_color(r-10, g-10, b-10)
@@ -187,48 +175,70 @@ def create_complex_pdf(text, destination, meta_data):
 
     lines = text.split('\n')
     
-    # --- FLAGS ---
-    printed_ads = set()
-    
+    # Flags per sicurezza (anche se usiamo la logica di fine capitolo)
+    inserted_ch1 = False
+    inserted_ch2 = False
+    inserted_ch3 = False
+    inserted_ch4 = False
+
     for line in lines:
-        # Pulizia base della riga
         clean_line = clean_text_for_pdf(line)
         line_upper = clean_line.upper()
         
-        # --- RILEVAMENTO TIPO RIGA ---
-        is_header_1 = line.strip().startswith('# ')
-        is_header_2 = line.strip().startswith('## ')
-        is_bullet = line.strip().startswith('* ') or line.strip().startswith('- ')
-        is_verdict = "VERDETTO" in line_upper
+        # --- LOGICA BLINDATA LINK A FINE CAPITOLO ---
+        # Se sta iniziando il Capitolo 2, stampiamo i link del Capitolo 1
+        if "## CAPITOLO 2" in line_upper and not inserted_ch1:
+            make_box(pdf, "Prenota i voli migliori su Kiwi.com (Multitratta)", FLIGHT_LINK, "green")
+            make_box(pdf, "eSim Saily: Internet immediato all'arrivo", ESIM_LINK, "green")
+            make_box(pdf, "Assicurazione Sanitaria: Sconto 10% Heymondo", INSURANCE_LINK, "yellow")
+            inserted_ch1 = True
+            
+        # Se sta iniziando il Capitolo 3, stampiamo i link del Capitolo 2
+        elif "## CAPITOLO 3" in line_upper and not inserted_ch2:
+            make_box(pdf, f"Verifica offerte Hotel a {dest_clean} su Expedia", HOTEL_LINK, "blue")
+            inserted_ch2 = True
 
-        # --- FORMATTAZIONE E STAMPA TESTO (PRIMA del link) ---
-        if is_header_1: 
+        # Se sta iniziando il Capitolo 4, stampiamo i link del Capitolo 3
+        elif "## CAPITOLO 4" in line_upper and not inserted_ch3:
+            make_box(pdf, "Treni e Bus: Prenota su Omio", TRAIN_LINK, "purple")
+            make_box(pdf, "Noleggio Auto: Migliori tariffe con Auto Europe", RENTAL_LINK, "purple")
+            make_box(pdf, "Transfer Privati: Welcome Pickups", TRANSF_LINK, "purple")
+            make_box(pdf, f"Biglietti Attrazioni a {dest_clean} su Tiqets", TIQETS_LINK, "orange") # Aggiunto qui per coerenza
+            inserted_ch3 = True
+            
+        # Se sta iniziando il Capitolo 5, stampiamo i link del Capitolo 4
+        elif "## CAPITOLO 5" in line_upper and not inserted_ch4:
+            make_box(pdf, "Ristoranti: Leggi le recensioni su TripAdvisor", RESTAURANT_LINK, "green")
+            inserted_ch4 = True
+
+        # --- FORMATTAZIONE TESTO ---
+        if line.strip().startswith('# '): 
             pdf.ln(5)
             pdf.set_font("Helvetica", 'B', 20)
             pdf.set_text_color(44, 62, 80)
             pdf.multi_cell(0, 10, clean_line.replace('#', '').strip())
             pdf.ln(5)
             
-        elif is_header_2: 
+        elif line.strip().startswith('## '): 
             pdf.ln(5)
             pdf.set_font("Helvetica", 'B', 14)
             pdf.set_text_color(230, 126, 34) 
             pdf.multi_cell(0, 10, clean_line.replace('##', '').strip())
             
-        elif is_verdict: 
+        elif "VERDETTO" in line_upper: 
             pdf.ln(5)
             pdf.set_font("Helvetica", 'B', 12)
             pdf.set_fill_color(220, 220, 220)
-            pdf.cell(0, 10, clean_line.replace('*', '').strip(), 1, 1, 'C', fill=True)
+            clean_verdict = clean_line.replace('*', '').strip()
+            pdf.cell(0, 10, clean_verdict, 1, 1, 'C', fill=True)
             pdf.ln(5)
             
-        elif is_bullet: 
+        elif line.strip().startswith('* ') or line.strip().startswith('- '): 
             pdf.set_font("Helvetica", '', 11)
             pdf.set_text_color(20, 20, 20)
             pdf.set_x(15)
             pdf.cell(5, 6, chr(149), 0, 0)
-            # FIX TAGLIO PAROLE: Usiamo Regex per togliere solo il puntino iniziale
-            # Rimuove "* " o "- " all'inizio, ma non taglia cieco [2:]
+            # Regex chirurgica per rimuovere solo il marcatore iniziale
             content = re.sub(r'^[\*-]\s*', '', clean_line).strip()
             pdf.multi_cell(0, 6, content)
         
@@ -244,40 +254,6 @@ def create_complex_pdf(text, destination, meta_data):
                 pdf.set_text_color(40, 40, 40)
                 pdf.multi_cell(0, 6, clean_line)
                 pdf.ln(1)
-
-        # --- LOGICA INIEZIONE LINK (DOPO aver stampato il testo) ---
-        # Analizziamo il contenuto della riga appena stampata per decidere se mettere un link SOTTO.
-        
-        # 1. VOLI (Kiwi)
-        if ("VOLO" in line_upper or "AEREO" in line_upper or "AEROPORTO" in line_upper) and "flights" not in printed_ads:
-            make_box(pdf, "Prenota i voli migliori su Kiwi.com (Multitratta)", FLIGHT_LINK, "gray")
-            printed_ads.add("flights")
-
-        # 2. ESIM (Saily) - Spesso associato a "Internet", "Connessione", "Dati"
-        if ("INTERNET" in line_upper or "ESIM" in line_upper or "CONNESSIONE" in line_upper or "SIM" in line_upper) and "esim" not in printed_ads:
-            make_box(pdf, "eSim Saily: Internet immediato all'arrivo", ESIM_LINK, "green")
-            printed_ads.add("esim")
-
-        # 3. ASSICURAZIONE (Heymondo)
-        if ("ASSICURAZIONE" in line_upper or "SANITARIA" in line_upper or "SICUREZZA" in line_upper) and "insurance" not in printed_ads:
-            make_box(pdf, "Assicurazione Sanitaria: Sconto 10% Heymondo", INSURANCE_LINK, "yellow")
-            printed_ads.add("insurance")
-
-        # 4. HOTEL (Expedia)
-        if ("HOTEL" in line_upper or "ALLOGGIO" in line_upper or "RIAD" in line_upper or "DORMIRE" in line_upper) and "hotel" not in printed_ads:
-            make_box(pdf, f"Verifica offerte Hotel a {dest_clean} su Expedia", HOTEL_LINK, "blue")
-            printed_ads.add("hotel")
-            
-        # 5. NOLEGGIO AUTO (Auto Europe)
-        if ("AUTO" in line_upper or "NOLEGGIO" in line_upper or "SPOSTAMENTI" in line_upper) and "car" not in printed_ads:
-            make_box(pdf, f"Noleggio Auto: Confronta prezzi con Auto Europe", RENTAL_LINK, "gray")
-            printed_ads.add("car")
-            
-        # 6. BIGLIETTI (Tiqets) - Trigger su Musei, Ingressi, Tour
-        if ("MUSEO" in line_upper or "INGRESSO" in line_upper or "BIGLIETT" in line_upper or "TOUR" in line_upper) and "tickets" not in printed_ads:
-             make_box(pdf, f"Biglietti Musei e Attrazioni a {dest_clean} su Tiqets", TIQETS_LINK, "orange")
-             printed_ads.add("tickets")
-
 
     # --- PAGINA PARTNER ---
     pdf.add_page()
@@ -392,21 +368,21 @@ st.write("")
 with st.container():
     st.info("🧙‍♂️ Inserisci i dettagli per ricevere un Travel Plan completo.")
     
-    # RIGA 1: Destinazione e Budget
+    # RIGA 1
     c_dest, c_bud = st.columns([2, 1])
     with c_dest:
         destination = st.text_input("Destinazione (Regione/Paese)", placeholder="Es. Giappone...")
     with c_bud:
         budget = st.number_input("Budget Totale (€)", min_value=500, value=3000, step=100)
     
-    # RIGA 2: Date
+    # RIGA 2
     c_start, c_end = st.columns(2)
     with c_start:
          start_date = st.date_input("Data Partenza", datetime.date.today() + datetime.timedelta(days=30))
     with c_end:
          end_date = st.date_input("Data Ritorno", datetime.date.today() + datetime.timedelta(days=37))
 
-    # RIGA 3: Persone
+    # RIGA 3
     c_ad, c_kids = st.columns(2)
     with c_ad:
          adults = st.number_input("Numero Adulti", min_value=1, value=2)
@@ -461,12 +437,11 @@ with st.container():
                     3. Simboli Valute: scrivi "EUR", "USD".
                     4. VIETATO L'USO DI ASTERISCHI O GRASSETTO MARKDOWN.
                     5. VIETATO USARE LISTE ANNIDATE.
-                    6. USA PREZZI IN EURO e con separatore migliaia.
                     
                     STRUTTURA TITOLI (Usa ESATTAMENTE questi):
                     # {destination.upper()}: [Sottotitolo]
                     **IL VERDETTO SUL BUDGET: € {budget}** (Stato: Lusso/Più che adeguato/Sufficiente/Stretto/Impossibile)
-                    ## CAPITOLO 1: LA PREPARAZIONE
+                    ## CAPITOLO 1: LA PREPARAZIONE (Voli, eSim, Assicurazione)
                     [Info voli, eSim Saily, assicurazione Heymondo con sconto 10%]
                     ## CAPITOLO 2: DOVE DORMIRE (Strategie alloggio)
                     [Suggerisci alloggi compatibili con il gruppo. Prediligi sistemazioni suggestive]
@@ -483,7 +458,7 @@ with st.container():
                     * Visti e requisiti: [Info]
                     * Fuso orario: [Info]
                     * Consigli utili: [Valuta e prese]
-                    ## CAPITOLO 9: CONCLUSIONE
+                    ## CAPITOLO 8: CONCLUSIONE
                     [Riflessione finale filosofica sul viaggio]
                     """
                     
@@ -584,4 +559,3 @@ st.markdown("""
     </p>
 </div>
 """, unsafe_allow_html=True)
-
