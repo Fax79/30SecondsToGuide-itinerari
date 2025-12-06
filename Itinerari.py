@@ -69,7 +69,7 @@ def partner_button(label, link, image_file):
         st.link_button(label, link, use_container_width=True)
 
 # ==========================================
-# 🧙‍♂️ PDF ENGINE "WIZARD EDITION v4.0"
+# 🧙‍♂️ PDF ENGINE "WIZARD EDITION v4.1"
 # ==========================================
 def create_complex_pdf(text, destination, meta_data):
     
@@ -152,15 +152,15 @@ def create_complex_pdf(text, destination, meta_data):
     pdf.make_cover(dest_clean, meta_data)
     pdf.add_page()
     
-    # --- BOX CONTESTUALE COLORATO (NO GRIGIO) ---
+    # --- BOX CONTESTUALE COLORATO ---
     def make_box(pdf_obj, text, link, color="blue"):
         text = clean_text_for_pdf(text)
         colors = {
             "blue": (230, 240, 255),    # Blu Expedia
-            "green": (235, 255, 235),   # Verde Saily/Kiwi
+            "green": (235, 255, 235),   # Verde Saily/Kiwi/Trip
             "yellow": (255, 250, 225),  # Giallo Heymondo
             "orange": (255, 240, 230),  # Arancio Tiqets
-            "purple": (245, 235, 255)   # Viola Omio/Auto
+            "purple": (245, 235, 255)   # Viola Omio/Auto/Welcome
         }
         r, g, b = colors.get(color, (230, 240, 255))
         pdf_obj.ln(3)
@@ -175,7 +175,7 @@ def create_complex_pdf(text, destination, meta_data):
 
     lines = text.split('\n')
     
-    # Flags per sicurezza (anche se usiamo la logica di fine capitolo)
+    # Flags per gestione link a fine capitolo
     inserted_ch1 = False
     inserted_ch2 = False
     inserted_ch3 = False
@@ -186,27 +186,30 @@ def create_complex_pdf(text, destination, meta_data):
         line_upper = clean_line.upper()
         
         # --- LOGICA BLINDATA LINK A FINE CAPITOLO ---
-        # Se sta iniziando il Capitolo 2, stampiamo i link del Capitolo 1
+        
+        # Fine Capitolo 1 (Trigger su inizio Cap 2)
         if "## CAPITOLO 2" in line_upper and not inserted_ch1:
             make_box(pdf, "Prenota i voli migliori su Kiwi.com (Multitratta)", FLIGHT_LINK, "green")
             make_box(pdf, "eSim Saily: Internet immediato all'arrivo", ESIM_LINK, "green")
             make_box(pdf, "Assicurazione Sanitaria: Sconto 10% Heymondo", INSURANCE_LINK, "yellow")
             inserted_ch1 = True
             
-        # Se sta iniziando il Capitolo 3, stampiamo i link del Capitolo 2
+        # Fine Capitolo 2 (Trigger su inizio Cap 3)
         elif "## CAPITOLO 3" in line_upper and not inserted_ch2:
             make_box(pdf, f"Verifica offerte Hotel a {dest_clean} su Expedia", HOTEL_LINK, "blue")
+            # SPOSTATO QUI: Welcome Pickups
+            make_box(pdf, "Transfer privati ad un prezzo WOW! da e per l'aeroporto", TRANSF_LINK, "purple")
             inserted_ch2 = True
 
-        # Se sta iniziando il Capitolo 4, stampiamo i link del Capitolo 3
+        # Fine Capitolo 3 (Trigger su inizio Cap 4)
         elif "## CAPITOLO 4" in line_upper and not inserted_ch3:
-            make_box(pdf, "Treni e Bus: Prenota su Omio", TRAIN_LINK, "purple")
+            # NUOVO ORDINE: Tiqets -> Auto Europe -> Omio
+            make_box(pdf, f"Biglietti Attrazioni a {dest_clean} su Tiqets", TIQETS_LINK, "orange")
             make_box(pdf, "Noleggio Auto: Migliori tariffe con Auto Europe", RENTAL_LINK, "purple")
-            make_box(pdf, "Transfer Privati: Welcome Pickups", TRANSF_LINK, "purple")
-            make_box(pdf, f"Biglietti Attrazioni a {dest_clean} su Tiqets", TIQETS_LINK, "orange") # Aggiunto qui per coerenza
+            make_box(pdf, "Treni e Bus: Prenota su Omio", TRAIN_LINK, "purple")
             inserted_ch3 = True
             
-        # Se sta iniziando il Capitolo 5, stampiamo i link del Capitolo 4
+        # Fine Capitolo 4 (Trigger su inizio Cap 5)
         elif "## CAPITOLO 5" in line_upper and not inserted_ch4:
             make_box(pdf, "Ristoranti: Leggi le recensioni su TripAdvisor", RESTAURANT_LINK, "green")
             inserted_ch4 = True
@@ -238,7 +241,6 @@ def create_complex_pdf(text, destination, meta_data):
             pdf.set_text_color(20, 20, 20)
             pdf.set_x(15)
             pdf.cell(5, 6, chr(149), 0, 0)
-            # Regex chirurgica per rimuovere solo il marcatore iniziale
             content = re.sub(r'^[\*-]\s*', '', clean_line).strip()
             pdf.multi_cell(0, 6, content)
         
@@ -255,7 +257,7 @@ def create_complex_pdf(text, destination, meta_data):
                 pdf.multi_cell(0, 6, clean_line)
                 pdf.ln(1)
 
-    # --- PAGINA PARTNER ---
+    # --- PAGINA PARTNER FINALE RIORGANIZZATA ---
     pdf.add_page()
     
     def make_sponsor_box(title, subtitle, link, highlight=False):
@@ -284,24 +286,28 @@ def create_complex_pdf(text, destination, meta_data):
     pdf.set_text_color(100, 100, 100)
     pdf.cell(0, 10, "Già visti nella guida...", 0, 1, 'L')
     pdf.ln(2)
+    
+    # Lista "Già Visti" aggiornata con tutti i servizi inclusi nel testo
     make_sponsor_box("Expedia", "Hotel e Voli", HOTEL_LINK)
     make_sponsor_box("Tiqets", "Biglietti musei e attrazioni", TIQETS_LINK) 
+    make_sponsor_box("Welcome Pickups", "Transfer aeroportuali", TRANSF_LINK) # Spostato qui
+    make_sponsor_box("Auto Europe", "Noleggio Auto", RENTAL_LINK)           # Spostato qui
+    make_sponsor_box("Omio", "Treni e Bus", TRAIN_LINK)                     # Spostato qui
     make_sponsor_box("Kiwi.com", "Voli low cost", FLIGHT_LINK)
     make_sponsor_box("Heymondo", "Assicurazione viaggio", INSURANCE_LINK)
     make_sponsor_box("Saily", "eSim internazionale", ESIM_LINK)
-    make_sponsor_box("Welcome Pickups", "Transfer aeroportuali", TRANSF_LINK)
+    make_sponsor_box("TripAdvisor", "Recensioni Ristoranti", RESTAURANT_LINK)
 
     pdf.ln(5)
     pdf.set_font("Helvetica", 'B', 16)
     pdf.set_text_color(44, 62, 80) 
     pdf.cell(0, 10, "ALTRI SERVIZI INDISPENSABILI", 0, 1, 'L')
     pdf.ln(2)
+    
+    # Lista "Altri" ridotta
     make_sponsor_box("Deposito Bagagli", "Libera le mani con Radical Storage", LUGGAGE_LINK, highlight=True)
     make_sponsor_box("Rimborsi Voli", "Volo in ritardo? Chiedi risarcimento con AirHelp", REIMB_LINK, highlight=True)
-    make_sponsor_box("Noleggio Auto", "Migliori tariffe con Auto Europe", RENTAL_LINK, highlight=True)
-    make_sponsor_box("Treni e Bus", "Prenota con Omio", TRAIN_LINK, highlight=True)
     make_sponsor_box("Taxi Locale", "Kiwitaxi per spostamenti urbani", TAXI_LINK, highlight=True)
-    make_sponsor_box("Ristoranti", "Recensioni su TripAdvisor", RESTAURANT_LINK, highlight=True)
 
     return pdf.output(dest='S').encode('latin-1')
 
@@ -437,6 +443,7 @@ with st.container():
                     3. Simboli Valute: scrivi "EUR", "USD".
                     4. VIETATO L'USO DI ASTERISCHI O GRASSETTO MARKDOWN.
                     5. VIETATO USARE LISTE ANNIDATE.
+                    6. TUTTI I PREZZI VANNO INDICATI IN EURO E CON SEPARATORE DELLE MIGLIAIA.
                     
                     STRUTTURA TITOLI (Usa ESATTAMENTE questi):
                     # {destination.upper()}: [Sottotitolo]
