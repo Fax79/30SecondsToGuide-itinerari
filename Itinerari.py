@@ -205,20 +205,20 @@ def create_complex_pdf(text, destination, meta_data):
         # --- LOGICA BLINDATA LINK ---
         
         if "## CAPITOLO 2" in line_upper and not inserted_ch1:
-            banner_text = f"Voli per {month_clean}? Verifica tariffe migliori per {dest_clean} su Kiwi.com"
+            banner_text = f"I biglietti dei voli in {month_clean} aumentano? Blocca le tariffe migliori su Kiwi.com"
             make_box(pdf, banner_text, FLIGHT_LINK, "green")
-            make_box(pdf, "eSim Saily: Internet immediato all'arrivo", ESIM_LINK, "green")
-            make_box(pdf, "Assicurazione Sanitaria: Sconto 10% Heymondo", INSURANCE_LINK, "yellow")
+            make_box(pdf, "eSim Saily: Internet immediato all'arrivo senza acquistodi SIM locali", ESIM_LINK, "green")
+            make_box(pdf, "Non viaggiare MAI senza Assicurazione Sanitaria: Approfitta QUI dello sconto 10% con Heymondo", INSURANCE_LINK, "yellow")
             inserted_ch1 = True
             
         elif "## CAPITOLO 3" in line_upper and not inserted_ch2:
-            make_box(pdf, f"Verifica offerte Hotel a {dest_clean} su Expedia", HOTEL_LINK, "blue")
+            make_box(pdf, f"Le stanze in Hotel si esauriscono velocemente in {month_clean}, verifica disponibilità e prezzi su Expedia", HOTEL_LINK, "blue")
             make_box(pdf, "Transfer privati ad un prezzo WOW! da e per l'aeroporto", TRANSF_LINK, "purple")
             inserted_ch2 = True
 
         elif "## CAPITOLO 4" in line_upper and not inserted_ch3:
-            make_box(pdf, f"Biglietti Attrazioni a {dest_clean} su Tiqets", TIQETS_LINK, "orange")
-            make_box(pdf, "Noleggio Auto: Migliori tariffe con Auto Europe", RENTAL_LINK, "purple")
+            make_box(pdf, f"Biglietti Attrazioni saltando la fila per il tuo tour in {dest_clean} su Tiqets", TIQETS_LINK, "orange")
+            make_box(pdf, "Viaggia in libertà e noleggia un auto: Tariffe esclusive con Auto Europe", RENTAL_LINK, "purple")
             make_box(pdf, "Treni e Bus: Prenota su Omio", TRAIN_LINK, "purple")
             inserted_ch3 = True
             
@@ -588,4 +588,5 @@ st.markdown("""
     </p>
 </div>
 """, unsafe_allow_html=True)
+
 
