@@ -395,7 +395,7 @@ with st.container():
     # RIGA 1
     c_dest, c_bud = st.columns([2, 1])
     with c_dest:
-        destination = st.text_input("Destinazione (Regione/Paese)", placeholder="Es. Giappone...")
+        destination = st.text_input("Destinazione (Città/Regione/Paese)", placeholder="Es. New York, Provenza, Giappone...")
     with c_bud:
         budget = st.number_input("Budget Totale (€)", min_value=500, value=3000, step=100)
     
@@ -588,3 +588,4 @@ st.markdown("""
     </p>
 </div>
 """, unsafe_allow_html=True)
+
