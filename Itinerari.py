@@ -69,7 +69,7 @@ def partner_button(label, link, image_file):
         st.link_button(label, link, use_container_width=True)
 
 # ==========================================
-# 🧙‍♂️ PDF ENGINE "WIZARD EDITION v5.1 (CRASH FIX)"
+# 🧙‍♂️ PDF ENGINE "WIZARD EDITION v7.0 (PAGE BREAK FIX)"
 # ==========================================
 def create_complex_pdf(text, destination, meta_data):
     
@@ -153,23 +153,28 @@ def create_complex_pdf(text, destination, meta_data):
     pdf.make_cover(dest_clean, meta_data)
     pdf.add_page()
     
-    # --- BOX CONTESTUALE STILE MAGAZINE ---
+    # --- BOX CONTESTUALE (CON CONTROLLO PAGINA) ---
     def make_box(pdf_obj, text, link, style="blue"):
         text = clean_text_for_pdf(text)
         
-        # Palette
         palettes = {
-            "blue":   {"bg": (240, 248, 255), "accent": (0, 102, 204)}, # Expedia Blue
-            "green":  {"bg": (240, 255, 240), "accent": (0, 153, 76)},  # Kiwi Green
-            "yellow": {"bg": (255, 253, 240), "accent": (204, 153, 0)}, # Heymondo Gold
-            "purple": {"bg": (248, 240, 255), "accent": (102, 0, 153)}, # Welcome Purple
-            "orange": {"bg": (255, 245, 235), "accent": (230, 90, 0)}   # Tiqets Orange
+            "blue":   {"bg": (240, 248, 255), "accent": (0, 102, 204)}, 
+            "green":  {"bg": (240, 255, 240), "accent": (0, 153, 76)},  
+            "yellow": {"bg": (255, 253, 240), "accent": (204, 153, 0)}, 
+            "purple": {"bg": (248, 240, 255), "accent": (102, 0, 153)}, 
+            "orange": {"bg": (255, 245, 235), "accent": (230, 90, 0)}   
         }
         
         chosen = palettes.get(style, palettes["blue"])
         bg_r, bg_g, bg_b = chosen["bg"]
         ac_r, ac_g, ac_b = chosen["accent"]
         
+        # --- FIX PAGE BREAK ---
+        # Controlliamo se c'è spazio sufficiente (25mm) prima del footer
+        if pdf_obj.get_y() > 250: # Se siamo sotto i 250mm (A4 è 297mm)
+             pdf_obj.add_page()   # Nuova pagina per non spezzare il banner
+        # ----------------------
+
         pdf_obj.ln(4)
         
         # 1. Sfondo
@@ -205,9 +210,11 @@ def create_complex_pdf(text, destination, meta_data):
         # --- LOGICA BLINDATA LINK ---
         
         if "## CAPITOLO 2" in line_upper and not inserted_ch1:
+            # === BANNER DINAMICO ===
             banner_text = f"I biglietti dei voli in {month_clean} aumentano? Blocca le tariffe migliori su Kiwi.com"
             make_box(pdf, banner_text, FLIGHT_LINK, "green")
-            make_box(pdf, "eSim Saily: Internet immediato all'arrivo senza acquistodi SIM locali", ESIM_LINK, "yellow")
+            # =======================
+            make_box(pdf, "eSim Saily: Internet immediato all'arrivo senza acquisto di SIM locali", ESIM_LINK, "yellow")
             make_box(pdf, "MAI senza Assicurazione Sanitaria: Approfitta QUI dello sconto 10% con Heymondo", INSURANCE_LINK, "green")
             inserted_ch1 = True
             
@@ -395,7 +402,7 @@ with st.container():
     # RIGA 1
     c_dest, c_bud = st.columns([2, 1])
     with c_dest:
-        destination = st.text_input("Destinazione (Città/Regione/Paese)", placeholder="Es. New York, Provenza, Giappone...")
+        destination = st.text_input("Destinazione (Regione/Paese)", placeholder="Es. Giappone...")
     with c_bud:
         budget = st.number_input("Budget Totale (€)", min_value=500, value=3000, step=100)
     
@@ -588,6 +595,3 @@ st.markdown("""
     </p>
 </div>
 """, unsafe_allow_html=True)
-
-
-
