@@ -486,7 +486,7 @@ with st.container():
                     ## CAPITOLO 3: L'ITINERARIO GIORNO PER GIORNO (Dettagliato)
                     [Itinerario ottimizzato. Prediligi attrazioni su Tiqets. Scoperta del territorio]
                     ## CAPITOLO 4: COSA MANGIARE
-                    [Piatti tipici, ristoranti (Tripadvisor), street food]
+                    [Piatti tipici, ristoranti (verifica su Tripadvisor i migliori per la fascia di prezzo compatibile con il budget e dai riferimenti puntuali), suggerisci i posti migliori per lo street food]
                     ## CAPITOLO 5: CALENDARIO CULTURALE
                     [Festival e ricorrenze]
                     ## CAPITOLO 6: CONTO ECONOMICO FINALE
@@ -598,5 +598,6 @@ st.markdown("""
     </p>
 </div>
 """, unsafe_allow_html=True)
+
 
 
